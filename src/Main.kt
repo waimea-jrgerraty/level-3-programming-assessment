@@ -3,8 +3,8 @@
  * Programming Project for NCEA Level 3, Standard 91906
  * ---------------------------------------------------------------------
  * Project Name:   PROJECT NAME HERE
- * Project Author: PROJECT AUTHOR HERE
- * GitHub Repo:    GITHUB REPO URL HERE
+ * Project Author: James Gerraty
+ * GitHub Repo:    https://github.com/waimea-jrgerraty/level-3-programming-assessment
  * ---------------------------------------------------------------------
  * Notes:
  * PROJECT NOTES HERE
