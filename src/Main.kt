@@ -7,7 +7,7 @@
  * GitHub Repo:    https://github.com/waimea-jrgerraty/level-3-programming-assessment
  * ---------------------------------------------------------------------
  * Notes:
- * PROJECT NOTES HERE
+ * The 'map' will be a undirected graph of locations
  * =====================================================================
  */
 
@@ -24,17 +24,16 @@ import javax.swing.*
  */
 fun main() {
     FlatDarkLaf.setup()     // Flat, dark look-and-feel
-    val app = App()         // Create the app model
-    MainWindow(app)         // Create and show the UI, using the app model
+    MainWindow(App)         // Create and show the UI, using the app model
 }
 
 
 /**
- * The application class (model)
+ * The application class (singleton data-model)
  * This is the place where any application data should be
  * stored, plus any application logic functions
  */
-class App() {
+object App {
     // Constants defining any key values
     val MAX_CLICKS = 10
 
