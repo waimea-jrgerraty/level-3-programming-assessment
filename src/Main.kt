@@ -17,6 +17,7 @@ import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
 import javax.swing.*
 import kotlin.math.pow
+import map.Map
 
 // Constants
 const val HEALTH_MAX_WIDTH = 450
@@ -52,6 +53,9 @@ object App {
 
     val maxHealth
         get() = 98.0 + (2.0.pow(level.toInt()))
+
+    var currentLocation = Map.Balmoral
+        private set
 
     fun takeDamage(damage: Double) {
         assert(damage >= 0.0) { "Use the heal method instead of takeDamage" }
