@@ -30,6 +30,11 @@ fun sleep(t: Double) {
 /** Launch the application */
 fun main() {
     FlatDarkLaf.setup() // Flat, dark look-and-feel
+
+    print("Select a save slot [1 - 5]: ")
+    val slot = (readln().toUByteOrNull() ?: 1u).coerceIn(1u, 5u)
+
+    App.load(slot)
     MainWindow(App) // Create and show the UI, using the app model
 }
 
@@ -67,20 +72,24 @@ object App {
         health = (health + amount).coerceIn(0.0, maxHealth)
     }
 
+    // -- Game State -- //
+    var onboardingCompleted = false // Short intro to establish the player's name
+
     // -- Persistence -- //
-    fun Marshal(slot: UByte) {
-        /**
-         * Marshal the App data into a file to be loaded later slot will be converted to a string
-         * and added to the file name, so we can have multiple save slots
-         *
-         * project will ask for whatever save slot at the start (maybe from console before the gui
-         * is created? not sure if that's allowed.)
-         */
-        TODO()
+
+    /**
+     * @param slot The slot to load Marshal the App data into a file to be loaded later slot will be
+     *   converted to a string and added to the file name, so we can have multiple save slots
+     *
+     * project will ask for whatever save slot at the start (maybe from console before the gui is
+     * created? not sure if that's allowed.)
+     */
+    fun marshal(slot: UByte) {
+        // TODO()
     }
 
-    fun Load(slot: UByte) {
-        TODO()
+    fun load(slot: UByte) {
+        // TODO()
     }
 }
 
@@ -89,7 +98,6 @@ object App {
  * argument
  */
 class MainWindow(val app: App) : JFrame(), ActionListener {
-
     // Fields to hold the UI elements
     private lateinit var display: JTextArea
     private lateinit var healthLabel: JLabel

@@ -56,7 +56,10 @@ class Graph<T> {
      * @param fromNode the value of the starting node.
      * @param toNode the value of the destination node.
      */
-    fun addEdge(fromNode: T, toNode: T) {
+    fun addEdge(
+        fromNode: T,
+        toNode: T,
+    ) {
         // Create an edge between the two nodes
         val node1 = Node(fromNode)
         val node2 = Node(toNode)
@@ -72,7 +75,10 @@ class Graph<T> {
      * @param fromNode the value of the starting node.
      * @param toNode the value of the destination node.
      */
-    fun removeEdge(fromNode: T, toNode: T) {
+    fun removeEdge(
+        fromNode: T,
+        toNode: T,
+    ) {
         // Remove an edge between the two nodes (if it exists)
         val node1 = Node(fromNode)
         val node2 = Node(toNode)
@@ -155,5 +161,7 @@ class Graph<T> {
     }
 
     // A simple data class to hold node values
-    data class Node<T>(val value: T)
+    data class Node<T>(
+        val value: T,
+    )
 }

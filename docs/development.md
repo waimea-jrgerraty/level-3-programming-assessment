@@ -27,15 +27,15 @@ Since we are using a graph to store the map, I had the idea to allow the player 
 
 I went for a medieval theme, for simplicity
 
-![example.png](screenshots/example.png)
-
 ---
 
-## Date: xx/xx/20xx
+## Date: 2/04/25
 
-Example description and notes. Example description and notes. Example description and notes. Example description and notes. Example description and notes. Example description and notes.
+I completed the pathfinding implementation using a breadth first search.
 
-![example.png](screenshots/example.png)
+The game now asks for a save slot in the console before launching the gui. I may move this into the gui later.
+
+![](screenshots/console.png)
 
 ---
 
