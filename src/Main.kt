@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 /**
  * =====================================================================
  * Programming Project for NCEA Level 3, Standard 91906
@@ -15,9 +17,12 @@ import java.awt.Font
 import java.awt.Rectangle
 import java.awt.event.ActionEvent
 import java.awt.event.ActionListener
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicReference
 import javax.swing.*
 import kotlin.math.pow
 import map.Map
+import sequencer.Sequencer
 
 // Constants
 const val HEALTH_MAX_WIDTH = 450
@@ -31,10 +36,7 @@ fun sleep(t: Double) {
 fun main() {
     FlatDarkLaf.setup() // Flat, dark look-and-feel
 
-    print("Select a save slot [1 - 5]: ")
-    val slot = (readln().toUByteOrNull() ?: 1u).coerceIn(1u, 5u)
-
-    App.load(slot)
+    App.load()
     MainWindow(App) // Create and show the UI, using the app model
 }
 
@@ -43,7 +45,11 @@ fun main() {
  * be stored, plus any application logic functions
  */
 object App {
+    lateinit var rerender: (() -> Unit)
+
     // -- Player stats -- //
+    var name = "USER"
+
     var level: UByte = 1u
         private set
 
@@ -73,22 +79,58 @@ object App {
     }
 
     // -- Game State -- //
+    val sequencer = Sequencer(this)
+
     var onboardingCompleted = false // Short intro to establish the player's name
+
+    var displayText = ""
+
+    // Show text with a typewriter effect
+    fun displayTextAndReRender(text: String) {
+        displayText = ""
+        rerender()
+
+        for (char in text) {
+            displayText += char
+            sleep(0.02)
+            rerender()
+        }
+    }
+
+    var expectingTextInput = false
+
+    // We have to use a synchronous wait mechanism to be able to return the user's input
+    private var textInputLatch: CountDownLatch? = null
+    private val textInputRef = AtomicReference<String>()
+
+    fun getTextInput(): String {
+        expectingTextInput = true
+        rerender()
+
+        textInputLatch = CountDownLatch(1)
+        textInputLatch!!.await() // Halt execution here while waiting for the input
+
+        // The user has input something, remove the input field
+        expectingTextInput = false
+        rerender()
+
+        return textInputRef.get()
+    }
+
+    internal fun submitTextInput(input: String) {
+        // Set the atomic reference as the input text and open the count-down latch to resume
+        // execution in getTextInput
+        textInputRef.set(input)
+        textInputLatch?.countDown()
+    }
 
     // -- Persistence -- //
 
-    /**
-     * @param slot The slot to load Marshal the App data into a file to be loaded later slot will be
-     *   converted to a string and added to the file name, so we can have multiple save slots
-     *
-     * project will ask for whatever save slot at the start (maybe from console before the gui is
-     * created? not sure if that's allowed.)
-     */
-    fun marshal(slot: UByte) {
+    fun marshal() {
         // TODO()
     }
 
-    fun load(slot: UByte) {
+    fun load() {
         // TODO()
     }
 }
@@ -97,21 +139,28 @@ object App {
  * Main UI window (view) Defines the UI and responds to events The app model should be passwd as an
  * argument
  */
-class MainWindow(val app: App) : JFrame(), ActionListener {
+class MainWindow(private val app: App) : JFrame(), ActionListener {
     // Fields to hold the UI elements
     private lateinit var display: JTextArea
     private lateinit var healthLabel: JLabel
     private lateinit var healthBarFrame: JPanel
     private lateinit var healthBar: JPanel
     private lateinit var action: JButton
+    private lateinit var textInput: JTextField
 
     /** Configure the UI and display it */
     init {
+        app.rerender = { updateView() } // Add a callback to allow app to trigger re-renders
+
         configureWindow() // Configure the window
         addControls() // Build the UI
 
         setLocationRelativeTo(null) // Centre the window
         isVisible = true // Make it visible
+
+        if (!app.onboardingCompleted) {
+            app.sequencer.onboarding()
+        }
 
         updateView() // Initialise the UI
     }
@@ -133,10 +182,7 @@ class MainWindow(val app: App) : JFrame(), ActionListener {
         val guiFont = Font(Font.SANS_SERIF, Font.PLAIN, 32)
 
         // We will use html tags to control the display text
-        display =
-            JTextArea(
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-            )
+        display = JTextArea("")
         display.lineWrap = true
         display.isEditable = false
         display.bounds = Rectangle(50, 50, 1100, 700)
@@ -144,6 +190,20 @@ class MainWindow(val app: App) : JFrame(), ActionListener {
         display.isOpaque = true
         display.background = Color(50, 50, 60)
         display.border = BorderFactory.createRaisedSoftBevelBorder()
+
+        textInput = JTextField()
+        textInput.bounds = Rectangle(50, 650, 1100, 100)
+        textInput.font = baseFont
+        textInput.isOpaque = true
+        textInput.background = Color(25, 25, 25)
+        // Raised Soft Bevel border with left and right insets for text padding
+        textInput.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createRaisedSoftBevelBorder(),
+            BorderFactory.createEmptyBorder(0, 10, 0, 10)
+        )
+        textInput.isVisible = false
+        textInput.addActionListener(this)
+        add(textInput)
         add(display)
 
         healthLabel = JLabel("Health:")
@@ -175,6 +235,19 @@ class MainWindow(val app: App) : JFrame(), ActionListener {
 
     /** Update the UI controls based on the current state of the application model */
     private fun updateView() {
+        // Handle input gathering
+        textInput.isVisible = app.expectingTextInput
+        if (app.expectingTextInput) {
+            textInput.text = "> "
+            // Defer the focus request until Swing re-renders
+            SwingUtilities.invokeLater {
+                textInput.requestFocusInWindow()
+                textInput.selectAll()
+            }
+        }
+
+        display.text = app.displayText
+
         healthBar.bounds =
             Rectangle(0, 0, (HEALTH_MAX_WIDTH * (App.health / App.maxHealth)).toInt(), 75)
     }
@@ -185,6 +258,13 @@ class MainWindow(val app: App) : JFrame(), ActionListener {
      */
     override fun actionPerformed(e: ActionEvent?) {
         when (e?.source) {
+            textInput -> {
+                if (app.expectingTextInput) {
+                    val input = textInput.text.trim()
+                    textInput.text = ""
+                    app.submitTextInput(input)
+                }
+            }
             action -> {
                 updateView()
             }

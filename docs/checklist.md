@@ -28,7 +28,7 @@ The program structure:
 - [ ] Defines and implements a **graphical user interface (GUI)**
 - [ ] Makes use of user-defined OOP **classes** from which **objects** are instantiated
 - [ ] Uses **functions** / **methods** to break up the code logically
-- [ ] Contains **sequences** of instructions
+- [ ] Contains **sequencer** of instructions
 - [ ] Uses **conditional** instructions to control the program flow
 - [ ] Uses program **branches** (if...else, when, etc.)
 - [ ] Uses **iteration** (loops) to repeat things (for, while, etc.)
