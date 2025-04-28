@@ -9,6 +9,8 @@ class Location(name: String) {
     lateinit var description: String
         internal set
 
+    val sublocations = ArrayList<Sublocation>()
+
     init {
         map.addNode(this)
     }
@@ -31,9 +33,15 @@ object Map {
 
         // Set up descriptions
         Balmoral.description =
-            "Balmoral is a quaint, charming medieval town nestled in a lush valley, surrounded by towering forests and winding rivers. Cobblestone streets wind through the heart of the town, where stone cottages with thatched roofs line the way. The air is filled with the scent of fresh bread from local bakeries and the distant clang of blacksmiths shaping iron. A grand stone castle overlooks the town, its towering spires a reminder of the town's noble past. With a bustling market square and a vibrant community of artisans and traders, Balmoral exudes a timeless, peaceful atmosphere, as if caught in the gentle embrace of history."
+            "Barmoral is a crumbling medieval township, marred by squalor and neglect. Its crooked timber buildings sag under the weight of age and rot, while muddy, refuse-choked streets wind between them. Once a modest trading post, it is now little more than a haven for brigands, drunks, and the desperate, where law is a rumour and decay clings to every stone."
         Northbury.description =
             "Northbury is a bustling medieval town nestled between rolling green hills and dense, ancient forests. Surrounded by sturdy stone walls, it thrives as a center of trade and craftsmanship, with merchants, blacksmiths, and farmers filling its cobbled streets. At its heart stands a grand market square, overlooked by a towering stone keep that serves as both a fortress and the seat of the local lord. The town’s people are hardy and industrious, bound together by tradition, faith, and a shared determination to weather both the harsh northern winters and the ever-present threats lurking beyond the town’s gates."
+
+        // Add sublocations
+        val BM_Blacksmith = Shop("Blacksmith")
+        BM_Blacksmith.description = "A crowded, rundown blacksmith that you wonder how it hasn't burnt down yet. Most of the equipment you can see inside is dented up and rusty."
+        BM_Blacksmith.addItem(ShopItem("Rusty Shiv", 1.99))
+        Balmoral.sublocations.add(BM_Blacksmith)
     }
 
     /**

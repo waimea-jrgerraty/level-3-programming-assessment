@@ -22,7 +22,10 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.swing.*
 import kotlin.math.pow
 import map.Map
+import sequencer.Attack
+import sequencer.Dictionary
 import sequencer.Sequencer
+import sequencer.Weapon
 
 // Constants
 const val HEALTH_MAX_WIDTH = 450
@@ -36,7 +39,6 @@ fun sleep(t: Double) {
 fun main() {
     FlatDarkLaf.setup() // Flat, dark look-and-feel
 
-    App.load()
     MainWindow(App) // Create and show the UI, using the app model
 }
 
@@ -68,6 +70,8 @@ object App {
     var currentLocation = Map.Balmoral
         private set
 
+    var primaryWeapon: Weapon = Dictionary.BatteredSword
+
     fun takeDamage(damage: Double) {
         assert(damage >= 0.0) { "Use the heal method instead of takeDamage" }
         health = (health - damage).coerceIn(0.0, maxHealth)
@@ -78,10 +82,13 @@ object App {
         health = (health + amount).coerceIn(0.0, maxHealth)
     }
 
+    fun giveExp(amount: Double) {
+        exp += amount.toULong()
+        // FIXME: Properly handle level ups
+    }
+
     // -- Game State -- //
     val sequencer = Sequencer(this)
-
-    var onboardingCompleted = false // Short intro to establish the player's name
 
     var displayText = ""
 
@@ -98,40 +105,50 @@ object App {
     }
 
     var expectingTextInput = false
+    var expectingCombatInput = false
 
     // We have to use a synchronous wait mechanism to be able to return the user's input
-    private var textInputLatch: CountDownLatch? = null
-    private val textInputRef = AtomicReference<String>()
+    private var inputLatch: CountDownLatch? = null
+    private val inputTextRef = AtomicReference<String>()
+    private val inputCombatRef = AtomicReference<Attack>()
 
     fun getTextInput(): String {
         expectingTextInput = true
         rerender()
 
-        textInputLatch = CountDownLatch(1)
-        textInputLatch!!.await() // Halt execution here while waiting for the input
+        inputLatch = CountDownLatch(1)
+        inputLatch!!.await() // Halt execution here while waiting for the input
 
         // The user has input something, remove the input field
         expectingTextInput = false
         rerender()
 
-        return textInputRef.get()
+        return inputTextRef.get()
     }
 
     internal fun submitTextInput(input: String) {
         // Set the atomic reference as the input text and open the count-down latch to resume
         // execution in getTextInput
-        textInputRef.set(input)
-        textInputLatch?.countDown()
+        inputTextRef.set(input)
+        inputLatch?.countDown()
     }
 
-    // -- Persistence -- //
+    fun getCombatAction(): Attack {
+        expectingCombatInput = true
+        rerender()
 
-    fun marshal() {
-        // TODO()
+        inputLatch = CountDownLatch(1)
+        inputLatch!!.await()
+
+        expectingCombatInput = false
+        rerender()
+
+        return inputCombatRef.get()
     }
 
-    fun load() {
-        // TODO()
+    internal fun submitCombatInput(input: Attack) {
+        inputCombatRef.set(input)
+        inputLatch?.countDown()
     }
 }
 
@@ -158,9 +175,7 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         setLocationRelativeTo(null) // Centre the window
         isVisible = true // Make it visible
 
-        if (!app.onboardingCompleted) {
-            app.sequencer.onboarding()
-        }
+        app.sequencer.onboarding()
 
         updateView() // Initialise the UI
     }
@@ -189,6 +204,8 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         display.font = baseFont
         display.isOpaque = true
         display.background = Color(50, 50, 60)
+        display.lineWrap = true
+        display.wrapStyleWord = true
         display.border = BorderFactory.createRaisedSoftBevelBorder()
 
         textInput = JTextField()
