@@ -4,13 +4,19 @@
  * =====================================================================
  * Programming Project for NCEA Level 3, Standard 91906
  * ---------------------------------------------------------------------
- * Project Name: PROJECT NAME HERE Project Author: James Gerraty GitHub Repo:
- * https://github.com/waimea-jrgerraty/level-3-programming-assessment
+ * Project Name:    Beneath Blackened Skys
+ * Project Author:  James Gerraty
+ * GitHub Repo:     https://github.com/waimea-jrgerraty/level-3-programming-assessment
  * ---------------------------------------------------------------------
  * Notes: The 'map' will be a undirected graph of locations
  * =====================================================================
  */
 import com.formdev.flatlaf.FlatDarkLaf
+import map.Map
+import sequencer.Attack
+import sequencer.Dictionary
+import sequencer.Sequencer
+import sequencer.Weapon
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Font
@@ -21,11 +27,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import javax.swing.*
 import kotlin.math.pow
-import map.Map
-import sequencer.Attack
-import sequencer.Dictionary
-import sequencer.Sequencer
-import sequencer.Weapon
 
 // Constants
 const val HEALTH_MAX_WIDTH = 450
@@ -67,10 +68,10 @@ object App {
     val maxHealth
         get() = 98.0 + (2.0.pow(level.toInt()))
 
-    var currentLocation = Map.Balmoral
+    var currentLocation = Map.balmoral
         private set
 
-    var primaryWeapon: Weapon = Dictionary.BatteredSword
+    var primaryWeapon: Weapon = Dictionary.batteredSword
 
     fun takeDamage(damage: Double) {
         assert(damage >= 0.0) { "Use the heal method instead of takeDamage" }
@@ -106,6 +107,7 @@ object App {
 
     var expectingTextInput = false
     var expectingCombatInput = false
+    var expectingAction = false
 
     // We have to use a synchronous wait mechanism to be able to return the user's input
     private var inputLatch: CountDownLatch? = null
@@ -165,6 +167,10 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
     private lateinit var action: JButton
     private lateinit var textInput: JTextField
 
+    private lateinit var combatFrame: JPanel
+    private lateinit var attackSelector: JComboBox<String>
+    private lateinit var attack: JButton
+
     /** Configure the UI and display it */
     init {
         app.rerender = { updateView() } // Add a callback to allow app to trigger re-renders
@@ -196,7 +202,28 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         val baseFont = Font(Font.SANS_SERIF, Font.PLAIN, 24)
         val guiFont = Font(Font.SANS_SERIF, Font.PLAIN, 32)
 
-        // We will use html tags to control the display text
+        combatFrame = JPanel()
+        combatFrame.bounds = Rectangle(100 + HEALTH_MAX_WIDTH, 600, 500, 200)
+        combatFrame.border = BorderFactory.createRaisedSoftBevelBorder()
+        combatFrame.isOpaque = true
+        combatFrame.background = Color.DARK_GRAY
+        combatFrame.layout = null
+        combatFrame.isVisible = false
+        add(combatFrame)
+
+        attackSelector = JComboBox()
+        attackSelector.bounds = Rectangle(25, 25, 450, 50)
+        attackSelector.addActionListener(this)
+        combatFrame.add(attackSelector)
+
+        attack = JButton("Attack")
+        attack.bounds = Rectangle(25, 100, 450, 75)
+        attack.background = Color(200, 100, 100)
+        attack.font = guiFont
+        attack.isEnabled = false
+        attack.addActionListener(this)
+        combatFrame.add(attack)
+
         display = JTextArea("")
         display.lineWrap = true
         display.isEditable = false
@@ -263,6 +290,29 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
             }
         }
 
+        combatFrame.isVisible = app.expectingCombatInput && app.expectingAction
+        if (app.expectingAction) {
+            if (app.expectingCombatInput) {
+                // Set up the list of attacks
+                attackSelector.removeAllItems()
+                // Find all attacks
+                val attacks = mutableListOf<String>()
+                for (move in app.primaryWeapon.moves) {
+                    if (app.primaryWeapon.cooldown[move] != null) {
+                        attacks.add("${move.name} [Cooldown: ${app.primaryWeapon.cooldown[move]} turns]")
+                    } else {
+                        attacks.add(move.name)
+                    }
+                }
+
+                attacks.sort()
+
+                for (item in attacks) {
+                    attackSelector.addItem(item)
+                }
+            }
+        }
+
         display.text = app.displayText
 
         healthBar.bounds =
@@ -283,7 +333,38 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
                 }
             }
             action -> {
+                app.expectingAction = !app.expectingAction
                 updateView()
+            }
+            attackSelector -> {
+                val selectedItem = attackSelector.selectedItem as? String
+                if (selectedItem != null) {
+                    if (!selectedItem.endsWith("]")) {
+                        attack.isEnabled = true
+                        return
+                    }
+                }
+                attack.isEnabled = false
+            }
+            attack -> {
+                if (app.expectingCombatInput) {
+                    val move = attackSelector.selectedItem as? String
+                    // Find Attack from move
+                    if (move != null) {
+                        var realMove: Attack? = null
+                        for (realAttack in app.primaryWeapon.moves) {
+                            if (realAttack.name == move) {
+                                realMove = realAttack
+                                break
+                            }
+                        }
+
+                        if (realMove != null) {
+                            attack.isEnabled = false
+                            app.submitCombatInput(realMove)
+                        }
+                    }
+                }
             }
         }
     }

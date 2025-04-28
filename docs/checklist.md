@@ -12,9 +12,9 @@ The game functions correctly and meets the specification:
 - [ ] The game is **playable**
 - [ ] The game has a **GUI** with a range of controls
 - [ ] The **instructions** for the game are available via the GUI
-- [ ] Player provides game **inputs via the GUI** (e.g. moves, actions)
-- [ ] The **current status** of the game is **shown in the GUI**, updated each player input
-- [ ] The game is based on a **non-trivial map**
+- [x] Player provides game **inputs via the GUI** (e.g. moves, actions)
+- [x] The **current status** of the game is **shown in the GUI**, updated each player input
+- [x] The game is based on a **non-trivial map**
 - [ ] The player can **move between locations**
 - [ ] The player has a **clear purpose** they can attempt to achieve
 - [ ] A **win / end / loss state** is possible
@@ -22,23 +22,23 @@ The game functions correctly and meets the specification:
 ### Program Code
 
 The program stores data using:
-- [ ] **Variables** of at least two types (e.g. int, text, boolean)
+- [x] **Variables** of at least two types (e.g. int, text, boolean)
 
 The program structure:
-- [ ] Defines and implements a **graphical user interface (GUI)**
-- [ ] Makes use of user-defined OOP **classes** from which **objects** are instantiated
-- [ ] Uses **functions** / **methods** to break up the code logically
-- [ ] Contains **sequencer** of instructions
-- [ ] Uses **conditional** instructions to control the program flow
-- [ ] Uses program **branches** (if...else, when, etc.)
-- [ ] Uses **iteration** (loops) to repeat things (for, while, etc.)
+- [x] Defines and implements a **graphical user interface (GUI)**
+- [x] Makes use of user-defined OOP **classes** from which **objects** are instantiated
+- [x] Uses **functions** / **methods** to break up the code logically
+- [x] Contains **sequencer** of instructions
+- [x] Uses **conditional** instructions to control the program flow
+- [x] Uses program **branches** (if...else, when, etc.)
+- [x] Uses **iteration** (loops) to repeat things (for, while, etc.)
 
 ### Program Documentation
 
 The program code:
-- [ ] Is **indented** correctly
-- [ ] Is **laid-out clearly**
-- [ ] Contains **comments** that help in understanding how it works
+- [x] Is **indented** correctly
+- [x] Is **laid-out clearly**
+- [x] Contains **comments** that help in understanding how it works
 
 ### Program Testing
 
@@ -60,9 +60,9 @@ The program has been tested and there is documented evidence that:
 ### Program Code
 
 The program stores data using variables, where:
-- [ ] Variable **names are well-chosen** (relating to their purpose)
-- [ ] Variable names **begin with lowercase**
-- [ ] Naming is consistent, either **camelCase or snake_case**
+- [x] Variable **names are well-chosen** (relating to their purpose)
+- [x] Variable names **begin with lowercase**
+- [x] Naming is consistent, either **camelCase or snake_case**
 - [ ] Variables are **scoped appropriately** (global or local to a function)
 - [ ] **Global** variables are only used if **genuinely needed**
 
