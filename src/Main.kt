@@ -391,6 +391,17 @@ class MainWindow() : JFrame(), ActionListener {
             }
         }
 
+        if (App.displayText == "") {
+            // While not in a sequence, display text will be empty
+            // We will build the standard text for outside of sequences here
+
+            App.displayText += """
+                You are in ${App.currentLocation.name}.
+                ${App.currentLocation.description}
+            """.trimIndent()
+
+            SwingUtilities.invokeLater { App.displayText = "" }
+        }
         display.text = App.displayText
 
         healthBar.bounds =
@@ -473,6 +484,7 @@ class MainWindow() : JFrame(), ActionListener {
                             for (l in Map.getAvailableDestinations(App.currentLocation)) {
                                 if (l.name == place) {
                                     App.currentLocation = l
+                                    App.currentSublocation = null
                                     break
                                 }
                             }
