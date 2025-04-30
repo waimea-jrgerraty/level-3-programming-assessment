@@ -12,7 +12,9 @@
  * =====================================================================
  */
 import com.formdev.flatlaf.FlatDarkLaf
+import map.Location
 import map.Map
+import map.Sublocation
 import sequencer.Attack
 import sequencer.Dictionary
 import sequencer.Sequencer
@@ -36,11 +38,31 @@ fun sleep(t: Double) {
     Thread.sleep((t * 1000).toLong())
 }
 
+// UI Utilities
+fun containerComponent(bounds: Rectangle): JPanel {
+    val frame = JPanel()
+
+    frame.bounds = bounds
+    frame.border = BorderFactory.createRaisedSoftBevelBorder()
+    frame.isOpaque = true
+    frame.background = Color.DARK_GRAY
+    frame.layout = null
+    frame.isVisible = false
+
+    return frame
+}
+
+// Force state before startup for testing
+fun testState() {
+    App.flags.add("onboarding")
+}
+
 /** Launch the application */
 fun main() {
     FlatDarkLaf.setup() // Flat, dark look-and-feel
 
-    MainWindow(App) // Create and show the UI, using the app model
+    testState() // Apply debug tests if needed
+    MainWindow() // Create and show the UI, using the app model
 }
 
 /**
@@ -69,7 +91,7 @@ object App {
         get() = 98.0 + (2.0.pow(level.toInt()))
 
     var currentLocation = Map.balmoral
-        private set
+    var currentSublocation: Sublocation? = null
 
     var primaryWeapon: Weapon = Dictionary.batteredSword
 
@@ -90,6 +112,9 @@ object App {
 
     // -- Game State -- //
     val sequencer = Sequencer(this)
+
+    // We use flags to track our progress, used to handle when to start sequences
+    val flags = mutableSetOf<String>()
 
     var displayText = ""
 
@@ -158,7 +183,7 @@ object App {
  * Main UI window (view) Defines the UI and responds to events The app model should be passwd as an
  * argument
  */
-class MainWindow(private val app: App) : JFrame(), ActionListener {
+class MainWindow() : JFrame(), ActionListener {
     // Fields to hold the UI elements
     private lateinit var display: JTextArea
     private lateinit var healthLabel: JLabel
@@ -171,9 +196,13 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
     private lateinit var attackSelector: JComboBox<String>
     private lateinit var attack: JButton
 
+    private lateinit var movementFrame: JPanel
+    private lateinit var placeSelector: JComboBox<String>
+    private lateinit var move: JButton
+
     /** Configure the UI and display it */
     init {
-        app.rerender = { updateView() } // Add a callback to allow app to trigger re-renders
+        App.rerender = { updateView() } // Add a callback to allow App to trigger re-renders
 
         configureWindow() // Configure the window
         addControls() // Build the UI
@@ -181,7 +210,9 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         setLocationRelativeTo(null) // Centre the window
         isVisible = true // Make it visible
 
-        app.sequencer.onboarding()
+        if (!App.flags.contains("onboarding")) {
+            App.sequencer.onboarding()
+        }
 
         updateView() // Initialise the UI
     }
@@ -202,13 +233,7 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         val baseFont = Font(Font.SANS_SERIF, Font.PLAIN, 24)
         val guiFont = Font(Font.SANS_SERIF, Font.PLAIN, 32)
 
-        combatFrame = JPanel()
-        combatFrame.bounds = Rectangle(100 + HEALTH_MAX_WIDTH, 600, 500, 200)
-        combatFrame.border = BorderFactory.createRaisedSoftBevelBorder()
-        combatFrame.isOpaque = true
-        combatFrame.background = Color.DARK_GRAY
-        combatFrame.layout = null
-        combatFrame.isVisible = false
+        combatFrame = containerComponent(Rectangle(100 + HEALTH_MAX_WIDTH, 600, 500, 200))
         add(combatFrame)
 
         attackSelector = JComboBox()
@@ -223,6 +248,22 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         attack.isEnabled = false
         attack.addActionListener(this)
         combatFrame.add(attack)
+
+        movementFrame = containerComponent(Rectangle(100 + HEALTH_MAX_WIDTH, 600, 500, 200))
+        add(movementFrame)
+
+        placeSelector = JComboBox()
+        placeSelector.bounds = Rectangle(25, 25, 450, 50)
+        placeSelector.addActionListener(this)
+        movementFrame.add(placeSelector)
+
+        move = JButton("Move")
+        move.bounds = Rectangle(25, 100, 450, 75)
+        move.background = Color(200, 100, 100)
+        move.font = guiFont
+        move.isEnabled = false
+        move.addActionListener(this)
+        movementFrame.add(move)
 
         display = JTextArea("")
         display.lineWrap = true
@@ -277,11 +318,11 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
         add(action)
     }
 
-    /** Update the UI controls based on the current state of the application model */
+    /** Update the UI controls based on the current state of the Application model */
     private fun updateView() {
         // Handle input gathering
-        textInput.isVisible = app.expectingTextInput
-        if (app.expectingTextInput) {
+        textInput.isVisible = App.expectingTextInput
+        if (App.expectingTextInput) {
             textInput.text = "> "
             // Defer the focus request until Swing re-renders
             SwingUtilities.invokeLater {
@@ -290,16 +331,17 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
             }
         }
 
-        combatFrame.isVisible = app.expectingCombatInput && app.expectingAction
-        if (app.expectingAction) {
-            if (app.expectingCombatInput) {
+        combatFrame.isVisible = App.expectingCombatInput && App.expectingAction
+        movementFrame.isVisible = App.expectingAction && !App.expectingCombatInput
+        if (App.expectingAction) {
+            if (App.expectingCombatInput) {
                 // Set up the list of attacks
                 attackSelector.removeAllItems()
                 // Find all attacks
                 val attacks = mutableListOf<String>()
-                for (move in app.primaryWeapon.moves) {
-                    if (app.primaryWeapon.cooldown[move] != null) {
-                        attacks.add("${move.name} [Cooldown: ${app.primaryWeapon.cooldown[move]} turns]")
+                for (move in App.primaryWeapon.moves) {
+                    if (App.primaryWeapon.cooldown[move] != null) {
+                        attacks.add("${move.name} [Cooldown: ${App.primaryWeapon.cooldown[move]} turns]")
                     } else {
                         attacks.add(move.name)
                     }
@@ -310,10 +352,46 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
                 for (item in attacks) {
                     attackSelector.addItem(item)
                 }
+            } else {
+                // Set up the list of locations
+                placeSelector.removeAllItems()
+
+                // Find sublocations first
+                val sublocations = mutableListOf<String>()
+                var hadSublocations = false
+
+                for (place in App.currentLocation.sublocations) {
+                    hadSublocations = true
+
+                    if (place == App.currentSublocation) {
+                        sublocations.add("${place.name} [You are here]")
+                        continue
+                    }
+                    sublocations.add(place.name)
+                }
+
+                if (hadSublocations) {
+                    sublocations.sort()
+                    sublocations.addFirst("[Sublocations]") // Prepend an identifier for sublocations
+                }
+
+                // Main locations
+                val places = mutableListOf<String>()
+                for (place in Map.getAvailableDestinations(App.currentLocation)) {
+                    places.add(place.name)
+                }
+
+                places.sort()
+                places.addFirst("[Locations]") // Prepend an identifier for locations
+
+                val moves = sublocations + places
+                for (move in moves) {
+                    placeSelector.addItem(move)
+                }
             }
         }
 
-        display.text = app.displayText
+        display.text = App.displayText
 
         healthBar.bounds =
             Rectangle(0, 0, (HEALTH_MAX_WIDTH * (App.health / App.maxHealth)).toInt(), 75)
@@ -326,14 +404,14 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
     override fun actionPerformed(e: ActionEvent?) {
         when (e?.source) {
             textInput -> {
-                if (app.expectingTextInput) {
+                if (App.expectingTextInput) {
                     val input = textInput.text.trim()
                     textInput.text = ""
-                    app.submitTextInput(input)
+                    App.submitTextInput(input)
                 }
             }
             action -> {
-                app.expectingAction = !app.expectingAction
+                App.expectingAction = !App.expectingAction
                 updateView()
             }
             attackSelector -> {
@@ -347,12 +425,12 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
                 attack.isEnabled = false
             }
             attack -> {
-                if (app.expectingCombatInput) {
+                if (App.expectingCombatInput) {
                     val move = attackSelector.selectedItem as? String
                     // Find Attack from move
                     if (move != null) {
                         var realMove: Attack? = null
-                        for (realAttack in app.primaryWeapon.moves) {
+                        for (realAttack in App.primaryWeapon.moves) {
                             if (realAttack.name == move) {
                                 realMove = realAttack
                                 break
@@ -361,8 +439,47 @@ class MainWindow(private val app: App) : JFrame(), ActionListener {
 
                         if (realMove != null) {
                             attack.isEnabled = false
-                            app.submitCombatInput(realMove)
+                            App.submitCombatInput(realMove)
                         }
+                    }
+                }
+            }
+            placeSelector -> {
+                val selectedItem = placeSelector.selectedItem as? String
+                if (selectedItem != null) {
+                    if (!selectedItem.endsWith("]")) {
+                        move.isEnabled = true
+                        return
+                    }
+                }
+                move.isEnabled = false
+            }
+            move -> {
+                if (App.expectingAction) {
+                    val place = placeSelector.selectedItem as? String
+                    if (place != null) {
+                        // NOTE: Having a sublocation with the same name as a location will cause issues with this Approach
+                        // Make sure to check there are no cases of this
+                        var sublocation: Sublocation? = null
+                        for (sl in App.currentLocation.sublocations) {
+                            if (sl.name == place) {
+                                sublocation = sl
+                                break
+                            }
+                        }
+                        if (sublocation != null) {
+                            App.currentSublocation = sublocation
+                        } else {
+                            for (l in Map.getAvailableDestinations(App.currentLocation)) {
+                                if (l.name == place) {
+                                    App.currentLocation = l
+                                    break
+                                }
+                            }
+                        }
+
+                        App.expectingAction = false
+                        updateView()
                     }
                 }
             }

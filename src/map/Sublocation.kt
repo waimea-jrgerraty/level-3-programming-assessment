@@ -1,6 +1,6 @@
 package map
 
-open class Sublocation(name: String) {
+open class Sublocation(val name: String) {
     lateinit var description: String
         internal set
 }

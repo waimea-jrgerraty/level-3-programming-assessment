@@ -5,7 +5,9 @@ import java.util.*
 
 val map = Graph<Location>()
 
-class Location(name: String) {
+class Location(
+    val name: String,
+) {
     lateinit var description: String
         internal set
 
@@ -39,7 +41,8 @@ object Map {
 
         // Add sublocations
         val bmBlacksmith = Shop("Blacksmith")
-        bmBlacksmith.description = "A crowded, rundown blacksmith that you wonder how it hasn't burnt down yet. Most of the equipment you can see inside is dented up and rusty."
+        bmBlacksmith.description =
+            "A crowded, rundown blacksmith that you wonder how it hasn't burnt down yet. Most of the equipment you can see inside is dented up and rusty."
         bmBlacksmith.addItem(ShopItem("Rusty Shiv", 1.99))
         balmoral.sublocations.add(bmBlacksmith)
     }
@@ -48,8 +51,7 @@ object Map {
      * @param location The location to check the connected locations for
      * @return A list of locations connected to `location`
      */
-    fun getAvailableDestinations(location: Location): List<Location> =
-        map.getConnectedNodes(location)
+    fun getAvailableDestinations(location: Location): List<Location> = map.getConnectedNodes(location)
 
     /**
      * @param from The location to start at
@@ -57,7 +59,10 @@ object Map {
      * @return A list of locations to travel through to get to the destination. Or null if no path
      *   is found Find a path from one location to another
      */
-    fun getDirections(from: Location, to: Location): List<Location>? {
+    fun getDirections(
+        from: Location,
+        to: Location,
+    ): List<Location>? {
         if (from == to) {
             return listOf(from)
         }

@@ -32,18 +32,19 @@ class Enemy {
     fun doTurn(): Attack = attacks.random()
 }
 
+// class instead of object because we need to pass in app
 class Sequencer(
     private val app: App,
 ) {
     fun combat(enemy: Enemy) {
         app.displayText =
             """
-            |${app.name} versus ${enemy.name} - Begin
-            |${enemy.name}'s Health: ${enemy.health}/${enemy.maxHealth}
-            |
-            |${app.name}'s turn:
-            |
-            |
+            ${app.name} versus ${enemy.name} - Begin
+            ${enemy.name}'s Health: ${enemy.health}/${enemy.maxHealth}
+            
+            ${app.name}'s turn:
+            
+            
             """.trimMargin()
         app.rerender()
 
@@ -80,12 +81,12 @@ class Sequencer(
             turnNumber++
             app.displayText =
                 """
-                |${app.name} versus ${enemy.name} - Turn $turnNumber
-                |${enemy.name}'s Health: ${enemy.health}/${enemy.maxHealth}
-                |
-                |${app.name}'s turn:
-                |
-                |
+                ${app.name} versus ${enemy.name} - Turn $turnNumber
+                ${enemy.name}'s Health: ${enemy.health}/${enemy.maxHealth}
+                
+                ${app.name}'s turn:
+                
+                
                 """.trimIndent()
 
             // Lower the cooldown
@@ -103,6 +104,7 @@ class Sequencer(
 
         app.giveExp(enemy.maxHealth)
         app.displayTextAndReRender("You have successfully defeated ${enemy.name}!")
+        app.heal(Double.POSITIVE_INFINITY) // Fill the players health after they win
         sleep(3.0)
     }
 
@@ -151,5 +153,7 @@ class Sequencer(
         rourke.maxHealth = 100.0
         rourke.attacks.add(Attack("", "swings his sword at you", 7.0))
         combat(rourke)
+
+        app.flags.add("onboarding")
     }
 }
