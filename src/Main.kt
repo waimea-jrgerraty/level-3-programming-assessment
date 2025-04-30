@@ -14,7 +14,6 @@
 import com.formdev.flatlaf.FlatDarkLaf
 import map.Location
 import map.Map
-import map.Sublocation
 import sequencer.Attack
 import sequencer.Dictionary
 import sequencer.Sequencer
@@ -31,7 +30,7 @@ import javax.swing.*
 import kotlin.math.pow
 
 // Constants
-const val HEALTH_MAX_WIDTH = 450
+const val HEALTH_MAX_WIDTH = 350
 
 // Utilities
 fun sleep(t: Double) {
@@ -82,16 +81,15 @@ object App {
         private set
 
     val neededExp
-        get() = 1024u + 2.0.pow(level.toInt()).toULong()
+        get() = 50u + 1.75.pow(level.toInt()).toULong()
 
     var health = 100.0
         private set
 
     val maxHealth
-        get() = 98.0 + (2.0.pow(level.toInt()))
+        get() = 99.0 + (2.0.pow(level.toInt()))
 
     var currentLocation = Map.balmoral
-    var currentSublocation: Sublocation? = null
 
     var primaryWeapon: Weapon = Dictionary.batteredSword
 
@@ -107,16 +105,25 @@ object App {
 
     fun giveExp(amount: Double) {
         exp += amount.toULong()
-        // FIXME: Properly handle level ups
+
+        // Handle level-ups
+        while (exp >= neededExp) {
+            exp -= neededExp
+            level++
+            health = maxHealth
+        }
     }
 
     // -- Game State -- //
-    val sequencer = Sequencer(this)
 
     // We use flags to track our progress, used to handle when to start sequences
     val flags = mutableSetOf<String>()
 
     var displayText = ""
+
+    var storyDestination: Location? = null
+
+    var inSequence = false
 
     // Show text with a typewriter effect
     fun displayTextAndReRender(text: String) {
@@ -125,9 +132,11 @@ object App {
 
         for (char in text) {
             displayText += char
-            sleep(0.02)
+            sleep(0.0175)
             rerender()
         }
+
+        sleep(0.015 * text.length)
     }
 
     var expectingTextInput = false
@@ -200,6 +209,10 @@ class MainWindow() : JFrame(), ActionListener {
     private lateinit var placeSelector: JComboBox<String>
     private lateinit var move: JButton
 
+    private lateinit var lvl: JLabel
+    private lateinit var expBar: JProgressBar
+    private lateinit var destination: JLabel
+
     /** Configure the UI and display it */
     init {
         App.rerender = { updateView() } // Add a callback to allow App to trigger re-renders
@@ -211,7 +224,7 @@ class MainWindow() : JFrame(), ActionListener {
         isVisible = true // Make it visible
 
         if (!App.flags.contains("onboarding")) {
-            App.sequencer.onboarding()
+            Sequencer.onboarding()
         }
 
         updateView() // Initialise the UI
@@ -219,7 +232,7 @@ class MainWindow() : JFrame(), ActionListener {
 
     /** Configure the main window */
     private fun configureWindow() {
-        title = "Kotlin Swing GUI Demo"
+        title = "Beneath Blackened Skys"
         contentPane.preferredSize = Dimension(1200, 900)
         defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
         isResizable = false
@@ -316,6 +329,22 @@ class MainWindow() : JFrame(), ActionListener {
         action.font = guiFont
         action.addActionListener(this) // Handle any clicks
         add(action)
+
+        lvl = JLabel("LVL ${App.level}")
+        lvl.bounds = Rectangle(515 + HEALTH_MAX_WIDTH, 800, 75, 35)
+        lvl.font = baseFont
+        add(lvl)
+
+        expBar = JProgressBar(0, App.neededExp.toInt())
+        expBar.bounds = Rectangle(590 + HEALTH_MAX_WIDTH, 800, 150, 35)
+        expBar.font = baseFont
+        expBar.isStringPainted = true
+        add(expBar)
+
+        destination = JLabel()
+        destination.font = baseFont
+        destination.bounds = Rectangle(515 + HEALTH_MAX_WIDTH, 840, 500, 35)
+        add(destination)
     }
 
     /** Update the UI controls based on the current state of the Application model */
@@ -323,13 +352,27 @@ class MainWindow() : JFrame(), ActionListener {
         // Handle input gathering
         textInput.isVisible = App.expectingTextInput
         if (App.expectingTextInput) {
-            textInput.text = "> "
+            textInput.text = ""
             // Defer the focus request until Swing re-renders
             SwingUtilities.invokeLater {
                 textInput.requestFocusInWindow()
-                textInput.selectAll()
             }
         }
+
+        action.isEnabled = App.expectingCombatInput || !App.inSequence // Disable the action button while in a sequence
+        if (!App.inSequence) {
+            // While not in a sequence, display text will be empty
+            // We will build the standard text for outside of sequences here
+            App.displayText = """
+                You are in ${App.currentLocation.name}.
+                ${App.currentLocation.description}
+            """.trimIndent()
+        } else if (!App.expectingCombatInput) {
+            // Close the menu if its somehow open in a sequence
+            App.expectingAction = false
+        }
+
+        display.text = App.displayText
 
         combatFrame.isVisible = App.expectingCombatInput && App.expectingAction
         movementFrame.isVisible = App.expectingAction && !App.expectingCombatInput
@@ -355,57 +398,32 @@ class MainWindow() : JFrame(), ActionListener {
             } else {
                 // Set up the list of locations
                 placeSelector.removeAllItems()
-
-                // Find sublocations first
-                val sublocations = mutableListOf<String>()
-                var hadSublocations = false
-
-                for (place in App.currentLocation.sublocations) {
-                    hadSublocations = true
-
-                    if (place == App.currentSublocation) {
-                        sublocations.add("${place.name} [You are here]")
-                        continue
-                    }
-                    sublocations.add(place.name)
-                }
-
-                if (hadSublocations) {
-                    sublocations.sort()
-                    sublocations.addFirst("[Sublocations]") // Prepend an identifier for sublocations
-                }
-
-                // Main locations
+                // Find all connected locations
                 val places = mutableListOf<String>()
-                for (place in Map.getAvailableDestinations(App.currentLocation)) {
+                for (place in App.currentLocation.getAvailableDestinations()) {
                     places.add(place.name)
                 }
 
                 places.sort()
-                places.addFirst("[Locations]") // Prepend an identifier for locations
 
-                val moves = sublocations + places
-                for (move in moves) {
-                    placeSelector.addItem(move)
+                for (place in places) {
+                    placeSelector.addItem(place)
                 }
             }
         }
 
-        if (App.displayText == "") {
-            // While not in a sequence, display text will be empty
-            // We will build the standard text for outside of sequences here
-
-            App.displayText += """
-                You are in ${App.currentLocation.name}.
-                ${App.currentLocation.description}
-            """.trimIndent()
-
-            SwingUtilities.invokeLater { App.displayText = "" }
-        }
-        display.text = App.displayText
-
         healthBar.bounds =
             Rectangle(0, 0, (HEALTH_MAX_WIDTH * (App.health / App.maxHealth)).toInt(), 75)
+
+        lvl.text = "LVL ${App.level}"
+        expBar.maximum = App.neededExp.toInt()
+        expBar.value = App.exp.toInt()
+
+        if (App.storyDestination != null) {
+            destination.text = "Destination: ${App.storyDestination!!.name}"
+        } else {
+            destination.text = ""
+        }
     }
 
     /**
@@ -421,10 +439,12 @@ class MainWindow() : JFrame(), ActionListener {
                     App.submitTextInput(input)
                 }
             }
+
             action -> {
                 App.expectingAction = !App.expectingAction
                 updateView()
             }
+
             attackSelector -> {
                 val selectedItem = attackSelector.selectedItem as? String
                 if (selectedItem != null) {
@@ -435,6 +455,7 @@ class MainWindow() : JFrame(), ActionListener {
                 }
                 attack.isEnabled = false
             }
+
             attack -> {
                 if (App.expectingCombatInput) {
                     val move = attackSelector.selectedItem as? String
@@ -455,6 +476,7 @@ class MainWindow() : JFrame(), ActionListener {
                     }
                 }
             }
+
             placeSelector -> {
                 val selectedItem = placeSelector.selectedItem as? String
                 if (selectedItem != null) {
@@ -465,28 +487,19 @@ class MainWindow() : JFrame(), ActionListener {
                 }
                 move.isEnabled = false
             }
+
             move -> {
                 if (App.expectingAction) {
                     val place = placeSelector.selectedItem as? String
                     if (place != null) {
-                        // NOTE: Having a sublocation with the same name as a location will cause issues with this Approach
-                        // Make sure to check there are no cases of this
-                        var sublocation: Sublocation? = null
-                        for (sl in App.currentLocation.sublocations) {
-                            if (sl.name == place) {
-                                sublocation = sl
+                        for (l in App.currentLocation.getAvailableDestinations()) {
+                            if (l.name == place) {
+                                App.currentLocation = l
+                                // Have to invoke in a new thread, otherwise the gui hangs
+                                Thread {
+                                    l.onVisited?.invoke()
+                                }.start()
                                 break
-                            }
-                        }
-                        if (sublocation != null) {
-                            App.currentSublocation = sublocation
-                        } else {
-                            for (l in Map.getAvailableDestinations(App.currentLocation)) {
-                                if (l.name == place) {
-                                    App.currentLocation = l
-                                    App.currentSublocation = null
-                                    break
-                                }
                             }
                         }
 

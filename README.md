@@ -8,9 +8,7 @@ This is a programming project for **NCEA Level 3**, assessed against standard [9
 
 The project is written in the [Kotlin](https://kotlinlang.org) programming language and demonstrates a number of **complex programming techniques**:
 - Programming a graphical user interface (GUI)
-- Reading from, or writing to, files
 - Object-oriented programming (OOP) classes and objects
-- Using non-core API, library or framework
 - Using complex data structures (e.g. stacks, queues, trees, graphs)
 
 [//]: # (** EDIT LIST ABOVE TO MATCH YOUR PROJECT**)
@@ -28,7 +26,7 @@ The project is written in the [Kotlin](https://kotlinlang.org) programming langu
 
 ## Project Description
 
-This game will involve...
+Beneath Blackened Skys is a story-driven text-based RPG with a dark fantasy setting. 
 
 [//]: # (**PLACE YOUR PROJECT DESCRIPTION HERE**)
 
