@@ -1,4 +1,11 @@
+/**
+ * =====================================================================
+ * This file contains a dictionary of all weapons usable by the player.
+ * =====================================================================
+ */
 package sequencer
+
+// NOTE: The Attack class is located in Sequences.kt
 
 class Weapon(val name: String) {
     val moves = mutableListOf<Attack>()
@@ -7,13 +14,13 @@ class Weapon(val name: String) {
 
 // Stores all items
 object Dictionary {
-    val batteredSword =
-        Weapon("Battered Sword")
+    val batteredSword = Weapon("Battered Sword")
     val northburyAxe = Weapon("Deserted Axe")
     val sabre = Weapon("Sabre")
     val kingsbaneBlade = Weapon("Kingsbane Blade")
 
     init {
+        // Battered Sword //
         batteredSword.moves.add(Attack("Swing", "swing the battered sword", 6.0))
         batteredSword.moves.add(Attack("Thrust", "thrust the sword at the enemy", 11.0, 2u))
         batteredSword.moves.add(
@@ -25,6 +32,7 @@ object Dictionary {
             )
         )
 
+        // Northbury Axe //
         northburyAxe.moves.add(Attack("Chop", "chop downward with the heavy axe", 8.0))
         northburyAxe.moves.add(
             Attack(
@@ -51,6 +59,7 @@ object Dictionary {
             )
         )
 
+        // Sabre //
         sabre.moves.add(Attack("Slash", "quickly slash with the sharp edge of the sabre", 7.0))
         sabre.moves.add(Attack("Riposte", "swiftly counter an incoming attack with a precise thrust", 12.0, 2u))
         sabre.moves.add(
@@ -78,6 +87,7 @@ object Dictionary {
             )
         )
 
+        // Kingsbane Blade //
         kingsbaneBlade.moves.add(
             Attack(
                 "Shadow Rend",
@@ -85,7 +95,6 @@ object Dictionary {
                 15.0
             )
         )
-
         kingsbaneBlade.moves.add(
             Attack(
                 "Crownbreaker",
@@ -94,7 +103,6 @@ object Dictionary {
                 2u
             )
         )
-
         kingsbaneBlade.moves.add(
             Attack(
                 "Umbral Chains",
@@ -103,7 +111,6 @@ object Dictionary {
                 4u
             )
         )
-
         kingsbaneBlade.moves.add(
             Attack(
                 "Thronecleaver",
@@ -112,7 +119,6 @@ object Dictionary {
                 5u
             )
         )
-
         kingsbaneBlade.moves.add(
             Attack(
                 "End of Rule",

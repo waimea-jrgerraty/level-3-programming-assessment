@@ -8,7 +8,7 @@
  * Project Author:  James Gerraty
  * GitHub Repo:     https://github.com/waimea-jrgerraty/level-3-programming-assessment
  * ---------------------------------------------------------------------
- * Notes: The 'map' will be a undirected graph of locations
+ * Notes: The 'map' is an undirected graph of locations
  * =====================================================================
  */
 import com.formdev.flatlaf.FlatDarkLaf
@@ -30,14 +30,23 @@ import javax.swing.*
 import kotlin.math.pow
 
 // Constants
-const val HEALTH_MAX_WIDTH = 350
+
+const val HEALTH_WIDTH = 350
+const val TYPEWRITER_MODIFIER = 0.875
 
 // Utilities
+
+/**
+ * Pauses the execution of the current thread for `t` seconds
+ *
+ * @param t The time in seconds to pause execution for
+ */
 fun sleep(t: Double) {
     Thread.sleep((t * 1000).toLong())
 }
 
 // UI Utilities
+
 fun containerComponent(bounds: Rectangle): JPanel {
     val frame = JPanel()
 
@@ -53,7 +62,7 @@ fun containerComponent(bounds: Rectangle): JPanel {
 
 // Force state before startup for testing
 fun testState() {
-    App.flags.add("onboarding")
+    //App.flags.add("onboarding")
 }
 
 /** Launch the application */
@@ -69,6 +78,9 @@ fun main() {
  * be stored, plus any application logic functions
  */
 object App {
+    /**
+     * Callback that triggers MainWindow.updateView()
+     */
     lateinit var rerender: (() -> Unit)
 
     // -- Player stats -- //
@@ -87,22 +99,41 @@ object App {
         private set
 
     val maxHealth
-        get() = 99.0 + (2.0.pow(level.toInt()))
+        get() = 98.0 + (2.0.pow(level.toInt()))
 
     var currentLocation = Map.balmoral
 
     var primaryWeapon: Weapon = Dictionary.batteredSword
 
+    /**
+     * Deals damage to the player. Instead of damaging with a negative number, use App.heal to heal the player
+     * Prevents the player's health from dropping below 0.
+     *
+     * @param damage The amount of health to subtract from the player
+     * @throws AssertionError Errors if damage is negative
+     */
     fun takeDamage(damage: Double) {
         assert(damage >= 0.0) { "Use the heal method instead of takeDamage" }
-        health = (health - damage).coerceIn(0.0, maxHealth)
+        health = (health - damage).coerceAtLeast(0.0)
     }
 
+    /**
+     * Heals the player. Instead of damaging with a negative number, use App.takeDamage to damage the player.
+     * Healing the player above their max health will clamp it to the max health.
+     *
+     * @param amount The amount of health to add to the player
+     * @throws AssertionError Errors if amount is negative
+     */
     fun heal(amount: Double) {
         assert(amount <= 0.0) { "Use the takeDamage method instead of heal" }
-        health = (health + amount).coerceIn(0.0, maxHealth)
+        health = (health + amount).coerceAtMost(maxHealth)
     }
 
+    /**
+     * Gives the player EXP and handles level ups as needed
+     *
+     * @param amount The amount of EXP to give to the player
+     */
     fun giveExp(amount: Double) {
         exp += amount.toULong()
 
@@ -125,18 +156,23 @@ object App {
 
     var inSequence = false
 
-    // Show text with a typewriter effect
+    /**
+     * Replaces the text on screen, revealing it with a typewriter effect and adding a pause at the end for comfortable
+     * reading.
+     *
+     * @param text The text to be displayed on screen
+     */
     fun displayTextAndReRender(text: String) {
         displayText = ""
         rerender()
 
         for (char in text) {
             displayText += char
-            sleep(0.0175)
+            sleep(0.02 * TYPEWRITER_MODIFIER)
             rerender()
         }
 
-        sleep(0.015 * text.length)
+        sleep(0.02 * TYPEWRITER_MODIFIER.pow(2) * text.length)
     }
 
     var expectingTextInput = false
@@ -148,6 +184,11 @@ object App {
     private val inputTextRef = AtomicReference<String>()
     private val inputCombatRef = AtomicReference<Attack>()
 
+    /**
+     * Asks the user for a text input, halting execution of the thread until the user has entered the text.
+     *
+     * @return The text the user input before pressing enter
+     */
     fun getTextInput(): String {
         expectingTextInput = true
         rerender()
@@ -162,6 +203,11 @@ object App {
         return inputTextRef.get()
     }
 
+    /**
+     * Passes the user's input to resolve the getTextInput invocation and unpause execution
+     *
+     * @param input The string input by the user
+     */
     internal fun submitTextInput(input: String) {
         // Set the atomic reference as the input text and open the count-down latch to resume
         // execution in getTextInput
@@ -169,6 +215,11 @@ object App {
         inputLatch?.countDown()
     }
 
+    /**
+     * Asks the user for an attack, halting execution until one has been chosen.
+     *
+     * @return The attack selected by the user
+     */
     fun getCombatAction(): Attack {
         expectingCombatInput = true
         rerender()
@@ -182,6 +233,11 @@ object App {
         return inputCombatRef.get()
     }
 
+    /**
+     * Passes the user's selected attack to resolve the getCombatAction invocation and resume execution
+     *
+     * @param input The Attack (object, not the attack's name) the user has selected
+     */
     internal fun submitCombatInput(input: Attack) {
         inputCombatRef.set(input)
         inputLatch?.countDown()
@@ -192,12 +248,11 @@ object App {
  * Main UI window (view) Defines the UI and responds to events The app model should be passwd as an
  * argument
  */
-class MainWindow() : JFrame(), ActionListener {
+class MainWindow : JFrame(), ActionListener {
     // Fields to hold the UI elements
     private lateinit var display: JTextArea
     private lateinit var healthLabel: JLabel
-    private lateinit var healthBarFrame: JPanel
-    private lateinit var healthBar: JPanel
+    private lateinit var healthBar: JProgressBar
     private lateinit var action: JButton
     private lateinit var textInput: JTextField
 
@@ -216,6 +271,7 @@ class MainWindow() : JFrame(), ActionListener {
     /** Configure the UI and display it */
     init {
         App.rerender = { updateView() } // Add a callback to allow App to trigger re-renders
+        // This lets us call updateView from the sequencer
 
         configureWindow() // Configure the window
         addControls() // Build the UI
@@ -223,6 +279,7 @@ class MainWindow() : JFrame(), ActionListener {
         setLocationRelativeTo(null) // Centre the window
         isVisible = true // Make it visible
 
+        // Start the tutorial quest (unless flag has been added with debug)
         if (!App.flags.contains("onboarding")) {
             Sequencer.onboarding()
         }
@@ -246,7 +303,7 @@ class MainWindow() : JFrame(), ActionListener {
         val baseFont = Font(Font.SANS_SERIF, Font.PLAIN, 24)
         val guiFont = Font(Font.SANS_SERIF, Font.PLAIN, 32)
 
-        combatFrame = containerComponent(Rectangle(100 + HEALTH_MAX_WIDTH, 600, 500, 200))
+        combatFrame = containerComponent(Rectangle(100 + HEALTH_WIDTH, 600, 500, 200))
         add(combatFrame)
 
         attackSelector = JComboBox()
@@ -262,7 +319,7 @@ class MainWindow() : JFrame(), ActionListener {
         attack.addActionListener(this)
         combatFrame.add(attack)
 
-        movementFrame = containerComponent(Rectangle(100 + HEALTH_MAX_WIDTH, 600, 500, 200))
+        movementFrame = containerComponent(Rectangle(100 + HEALTH_WIDTH, 600, 500, 200))
         add(movementFrame)
 
         placeSelector = JComboBox()
@@ -309,41 +366,33 @@ class MainWindow() : JFrame(), ActionListener {
         healthLabel.bounds = Rectangle(50, 800, 100, 75)
         add(healthLabel)
 
-        healthBarFrame = JPanel()
-        healthBarFrame.bounds = Rectangle(175, 800, HEALTH_MAX_WIDTH, 75)
-        healthBarFrame.border = BorderFactory.createRaisedSoftBevelBorder()
-        healthBarFrame.isOpaque = true
-        healthBarFrame.background = Color.BLACK
-        healthBarFrame.layout = null
-        add(healthBarFrame)
-
-        healthBar = JPanel()
-        healthBar.bounds = Rectangle(0, 0, HEALTH_MAX_WIDTH, 75)
-        healthBar.border = BorderFactory.createRaisedSoftBevelBorder()
-        healthBar.isOpaque = true
-        healthBar.background = Color(200, 100, 100)
-        healthBarFrame.add(healthBar)
+        healthBar = JProgressBar(0, App.maxHealth.toInt())
+        healthBar.bounds = Rectangle(175, 800, HEALTH_WIDTH, 75)
+        healthBar.foreground = Color(200, 100, 100)
+        healthBar.font = baseFont
+        healthBar.isStringPainted = true
+        add(healthBar)
 
         action = JButton("Action")
-        action.bounds = Rectangle(200 + HEALTH_MAX_WIDTH, 800, 300, 75)
+        action.bounds = Rectangle(200 + HEALTH_WIDTH, 800, 300, 75)
         action.font = guiFont
         action.addActionListener(this) // Handle any clicks
         add(action)
 
         lvl = JLabel("LVL ${App.level}")
-        lvl.bounds = Rectangle(515 + HEALTH_MAX_WIDTH, 800, 75, 35)
+        lvl.bounds = Rectangle(515 + HEALTH_WIDTH, 800, 75, 35)
         lvl.font = baseFont
         add(lvl)
 
         expBar = JProgressBar(0, App.neededExp.toInt())
-        expBar.bounds = Rectangle(590 + HEALTH_MAX_WIDTH, 800, 150, 35)
+        expBar.bounds = Rectangle(590 + HEALTH_WIDTH, 800, 150, 35)
         expBar.font = baseFont
         expBar.isStringPainted = true
         add(expBar)
 
         destination = JLabel()
         destination.font = baseFont
-        destination.bounds = Rectangle(515 + HEALTH_MAX_WIDTH, 840, 500, 35)
+        destination.bounds = Rectangle(515 + HEALTH_WIDTH, 840, 500, 35)
         add(destination)
     }
 
@@ -412,8 +461,8 @@ class MainWindow() : JFrame(), ActionListener {
             }
         }
 
-        healthBar.bounds =
-            Rectangle(0, 0, (HEALTH_MAX_WIDTH * (App.health / App.maxHealth)).toInt(), 75)
+        healthBar.maximum = App.maxHealth.toInt()
+        healthBar.value = App.health.toInt()
 
         lvl.text = "LVL ${App.level}"
         expBar.maximum = App.neededExp.toInt()
@@ -448,6 +497,7 @@ class MainWindow() : JFrame(), ActionListener {
             attackSelector -> {
                 val selectedItem = attackSelector.selectedItem as? String
                 if (selectedItem != null) {
+                    // Only moves on cooldown end with ]
                     if (!selectedItem.endsWith("]")) {
                         attack.isEnabled = true
                         return
@@ -480,10 +530,8 @@ class MainWindow() : JFrame(), ActionListener {
             placeSelector -> {
                 val selectedItem = placeSelector.selectedItem as? String
                 if (selectedItem != null) {
-                    if (!selectedItem.endsWith("]")) {
-                        move.isEnabled = true
-                        return
-                    }
+                    move.isEnabled = true
+                    return
                 }
                 move.isEnabled = false
             }

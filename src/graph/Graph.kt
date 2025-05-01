@@ -4,7 +4,6 @@
  * Implementation based off https://github.com/DmitryTsyvtsyn/Kotlin-Algorithms-and-Design-Patterns/blob/develop/src/main/kotlin/structures/Graph.kt
  * =====================================================================
  */
-
 package graph
 
 import java.util.LinkedHashSet

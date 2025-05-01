@@ -1,14 +1,15 @@
+/**
+ * =====================================================================
+ * The sequencer contains the combat system and all scripted sequences.
+ * =====================================================================
+ */
 package sequencer
 
 import App
 import map.Map
 import java.util.*
 import kotlin.system.exitProcess
-
-// Utilities
-fun sleep(t: Double) {
-    Thread.sleep((t * 1000).toLong())
-}
+import sleep
 
 data class Attack(
     val name: String = "",
@@ -26,15 +27,26 @@ class Enemy {
             health = value // Makes it so we only have to set maxHealth when initializing our enemy
         }
     var health: Double = 0.0
-    var modifier: Double = 1.0
 
     val attacks = mutableListOf<Attack>()
 
+    /**
+     * Picks a random attack
+     * (NOTE: enemies do not support attack cooldown)
+     *
+     * @return One of the enemy's attacks chosen at random
+     */
     fun doTurn(): Attack = attacks.random()
 }
 
 // class instead of object because we need to pass in App
 object Sequencer {
+    /**
+     * Starts a combat sequence between the player and a created Enemy
+     *
+     * @param enemy The enemy the player will fight
+     * @throws exitProcess This function may stop the application of the user dies in combat
+     */
     private fun combat(enemy: Enemy) {
             App.displayText = """
             ${App.name} versus ${enemy.name} - Begin
@@ -141,11 +153,10 @@ object Sequencer {
     }
 
     fun mainlineNorthbury1() {
-        println("Starting sequence")
         App.inSequence = true
         App.storyDestination = null
+
         App.displayTextAndReRender("The road to Northbury is long and harsh.")
-        println("Played line apparently")
         App.displayTextAndReRender("Along the way, you notice something glistening embedded within a pine stump.")
         App.displayTextAndReRender("Upon closer inspection, it appears to be a lumber axe.")
         App.displayTextAndReRender("With no-one else in sight, you figure it's better than your sad excuse of a sword, so you take it.")

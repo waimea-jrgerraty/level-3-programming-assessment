@@ -1,3 +1,10 @@
+/**
+ * =====================================================================
+ * This file hold all the map data, and serves as a wrapper for the map graph.
+ * Contains a breadth-first search pathing algorithm to find the quickest route between two locations on the map.
+ * Also contains a helper method to turn a path into a descriptive string.
+ * =====================================================================
+ */
 package map
 
 import graph.Graph
@@ -22,7 +29,11 @@ class Location(val name: String) {
      */
     fun getAvailableDestinations(): List<Location> = map.getConnectedNodes(this)
 
-    // Internal (usable in Map.kt but not Main.kt) wrapper for addEdge
+    /**
+     * Creates an undirected connection between this and another location
+     *
+     * @param other Other location to add an undirected connection between
+     */
     internal fun connectToOther(other: Location) {
         map.addEdge(this, other)
     }
@@ -258,6 +269,8 @@ object Map {
     }
 
     /**
+     * Breadth-first search pathfinding algorithm used to find the shortest path between two locations on the map
+     *
      * @param from The location to start at
      * @param to The destination
      * @return A list of locations to travel through to get to the destination. Or null if no path
@@ -310,6 +323,8 @@ object Map {
     }
 
     /**
+     * Helper method that converts a generated path into a string of instructions to follow that path
+     *
      * @param path A path returned by getDirections
      * @return A string giving easy to follow instructions to get from one location to another
      */
