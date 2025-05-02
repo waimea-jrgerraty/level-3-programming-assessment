@@ -247,7 +247,7 @@ object Map {
             }
         }
         ironhold.onVisited = {
-            if (App.flags.contains("mainline_hallowforge_sanctified") && App.flags.contains("mainline_ironhold_sanctum")) {
+            if (App.flags.contains("mainline_hallowforge_sanctified") && !App.flags.contains("mainline_ironhold_sanctum")) {
                 Sequencer.mainlineIronholdSanctum()
             }
         }
@@ -297,7 +297,7 @@ object Map {
                 if (neighbour !in visited) {
                     visited.add(neighbour)
                     parent[neighbour] = vertex
-                    queue.add(vertex)
+                    queue.add(neighbour)
                     if (neighbour == to) {
                         // Reconstruct the path
 
