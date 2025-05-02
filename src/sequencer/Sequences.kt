@@ -114,6 +114,7 @@ object Sequencer {
         App.giveExp(enemy.maxHealth)
         App.displayTextAndReRender("You have successfully defeated ${enemy.name}!")
         App.heal(Double.POSITIVE_INFINITY) // Fill the players health after they win
+        App.primaryWeapon.cooldown.clear() // Remove all cooldowns (can cause soft locks otherwise)
         sleep(3.0)
     }
 
