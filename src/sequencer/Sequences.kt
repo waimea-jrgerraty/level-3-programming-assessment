@@ -48,7 +48,7 @@ object Sequencer {
      * @throws exitProcess This function may stop the application of the user dies in combat
      */
     private fun combat(enemy: Enemy) {
-            App.displayText = """
+        App.displayText = """
             ${App.name} versus ${enemy.name} - Begin
             ${enemy.name}: ${enemy.description}
             ${enemy.name}'s Health: ${enemy.health}/${enemy.maxHealth}
@@ -184,7 +184,7 @@ object Sequencer {
         App.displayTextAndReRender("You guide him back to Northbury, where the old woman weeps with relief.")
         App.displayTextAndReRender("\"Bless you, truly. Northbury owes you a debt.\" She pauses. \"If you're serious about helping people, you should travel to Dunmarch. They’ve had worse trouble than I can speak of.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.northbury, Map.dunmarch)))
-        sleep(2.0)
+        sleep(5.0)
         App.storyDestination = Map.dunmarch
 
         App.flags.add("mainline_northbury_1")
@@ -239,7 +239,7 @@ object Sequencer {
         App.displayTextAndReRender("You stagger back to Dunmarch. The mayor waits. \"You found something, didn’t you? Gods help us... we're not ready.\"")
         App.displayTextAndReRender("\"We'll need reinforcements. Seek out Lord-Captian Vaerin from Stormhold, I'm sure he'll understand.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.dunmarch, Map.stormhold)))
-        sleep(2.0)
+        sleep(5.0)
         App.storyDestination = Map.stormhold
 
         App.flags.add("main_dunmarch_barrow")
@@ -282,6 +282,7 @@ object Sequencer {
         App.displayTextAndReRender("\"At any rate, the reinforcements will take too long to get there at this rate,\" he mutters. \"But there may be a faster way.\"")
         App.displayTextAndReRender("\"Frostvale's watchtower went dark weeks ago. They maintain the northern signal lines — if we can restore it, we might alert other border garrisons.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.stormhold, Map.frostvale)))
+        sleep(5.0)
         App.storyDestination = Map.frostvale
 
         App.flags.add("mainline_stormhold_1")
@@ -292,7 +293,7 @@ object Sequencer {
     fun mainlineFrostvaleSignal() {
         App.inSequence = true
         App.storyDestination = null
-        App.displayTextAndReRender("You trudge through snow-laden forests and jagged passes. Frostmere is a windswept ruin perched over frozen cliffs.")
+        App.displayTextAndReRender("You trudge through snow-laden forests and jagged passes. Frostvale is a windswept ruin perched over frozen cliffs.")
         App.displayTextAndReRender("Icicles hang like spears from broken beams. The tower’s brazier is cold and blackened.")
         App.displayTextAndReRender("Inside, frozen corpses in guard cloaks lie in unnatural poses — jaws stretched wide in silent screams.")
         App.displayTextAndReRender("A low growl rumbles through the frost-crusted beams...")
@@ -300,7 +301,7 @@ object Sequencer {
         val frostWraith = Enemy()
         frostWraith.name = "Frostwoken Beast"
         frostWraith.description =
-            "A creature of cold and death, born from the broken pact between Frostmere’s sentinels and the spirits of the ice."
+            "A creature of cold and death, born from the broken pact between Frostvale’s sentinels and the spirits of the ice."
         frostWraith.maxHealth = 110.0
         frostWraith.attacks.add(Attack("", "slashes with frost-bitten claws", 9.0))
         frostWraith.attacks.add(Attack("", "lets out a chilling roar", 11.0))
@@ -314,6 +315,7 @@ object Sequencer {
         App.displayTextAndReRender("\"That’ll buy us time. Whatever’s coming, they’ll know it’s not just Dunmarch in danger.\"")
         App.displayTextAndReRender("\"Next, you should head for Sunpeak. We're going to need more firepower if we are to deal with the Drowned King.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.stormhold, Map.sunpeak)))
+        sleep(5.0)
         App.storyDestination = Map.sunpeak
 
         App.flags.add("mainline_frostvale_signal")
@@ -355,6 +357,7 @@ object Sequencer {
         App.displayTextAndReRender("\"Sunpeak will not fall as Dunmarch nearly did. We will prepare. And we will answer your call.\"")
         App.displayTextAndReRender("\"But there is a place you must go — a vault sealed since the First Dawn. In Glimmerpeak. If this truly is the Drowned King’s return, it may hold the key to stopping him.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.sunpeak, Map.glimmerpeak)))
+        sleep(5.0)
         App.storyDestination = Map.glimmerpeak
 
         App.flags.add("mainline_sunpeak_council")
@@ -480,6 +483,7 @@ object Sequencer {
         App.displayTextAndReRender("You return to the surface, shard in hand, and report to the Flamefather.")
         App.displayTextAndReRender("\"Then time is shorter than I feared. You must ride for cinderholm. If their watchers fall, the southern wards will fail next.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.ironhold, Map.cinderholm)))
+        sleep(5.0)
         App.storyDestination = Map.cinderholm
 
         App.flags.add("mainline_ironhold_sanctum")
@@ -514,6 +518,7 @@ object Sequencer {
 
         App.displayTextAndReRender("\"You must reach Thornfall next. They still keep the oldest codices. If there is any hope left, it lies buried in their catacombs.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.cinderholm, Map.thornfall)))
+        sleep(5.0)
         App.storyDestination = Map.thornfall
 
         App.flags.add("mainline_cinderholm_ashwake")
@@ -549,6 +554,7 @@ object Sequencer {
         App.displayTextAndReRender("A robed monk emerges from the mist, silent until the last breath of the Herald fades.")
         App.displayTextAndReRender("\"It is time. The final seal has broken. The Drowned King rises in Dunmarch, and there he must fall — or all will drown with him.\"")
         App.displayTextAndReRender(Map.describeDirections(Map.getDirections(Map.thornfall, Map.dunmarch)))
+        sleep(5.0)
         App.storyDestination = Map.dunmarch
 
         App.flags.add("mainline_thornfall_reckoning")
@@ -607,6 +613,7 @@ object Sequencer {
         }
 
         App.displayText += "\nFIN"
+        App.rerender
         sleep(3.0)
 
         App.displayTextAndReRender(
