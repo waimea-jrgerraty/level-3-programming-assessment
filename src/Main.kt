@@ -60,16 +60,10 @@ fun containerComponent(bounds: Rectangle): JPanel {
     return frame
 }
 
-// Force state before startup for testing
-fun testState() {
-    //App.flags.add("onboarding")
-}
-
 /** Launch the application */
 fun main() {
     FlatDarkLaf.setup() // Flat, dark look-and-feel
 
-    testState() // Apply debug tests if needed
     MainWindow() // Create and show the UI, using the app model
 }
 
@@ -93,13 +87,13 @@ object App {
         private set
 
     val neededExp
-        get() = 50u + 1.75.pow(level.toInt()).toULong()
+        get() = 50u + 1.75.pow(level.toInt()).toULong() // You need exponentially more EXP to reach higher levels
 
     var health = 100.0
         private set
 
     val maxHealth
-        get() = 98.0 + (2.0.pow(level.toInt()))
+        get() = 99.0 + (1.6.pow(level.toInt())) // Max health scales exponentially with level
 
     var currentLocation = Map.balmoral
 
@@ -172,7 +166,7 @@ object App {
             rerender()
         }
 
-        sleep(0.02 * TYPEWRITER_MODIFIER.pow(2) * text.length)
+        sleep(0.02 * TYPEWRITER_MODIFIER * text.length)
     }
 
     var expectingTextInput = false
@@ -245,8 +239,7 @@ object App {
 }
 
 /**
- * Main UI window (view) Defines the UI and responds to events The app model should be passwd as an
- * argument
+ * Main UI window (view) Defines the UI and responds to events
  */
 class MainWindow : JFrame(), ActionListener {
     // Fields to hold the UI elements
@@ -324,14 +317,12 @@ class MainWindow : JFrame(), ActionListener {
 
         placeSelector = JComboBox()
         placeSelector.bounds = Rectangle(25, 25, 450, 50)
-        placeSelector.addActionListener(this)
         movementFrame.add(placeSelector)
 
         move = JButton("Move")
         move.bounds = Rectangle(25, 100, 450, 75)
         move.background = Color(200, 100, 100)
         move.font = guiFont
-        move.isEnabled = false
         move.addActionListener(this)
         movementFrame.add(move)
 
@@ -380,12 +371,12 @@ class MainWindow : JFrame(), ActionListener {
         add(action)
 
         lvl = JLabel("LVL ${App.level}")
-        lvl.bounds = Rectangle(515 + HEALTH_WIDTH, 800, 75, 35)
+        lvl.bounds = Rectangle(515 + HEALTH_WIDTH, 800, 100, 35)
         lvl.font = baseFont
         add(lvl)
 
         expBar = JProgressBar(0, App.neededExp.toInt())
-        expBar.bounds = Rectangle(590 + HEALTH_WIDTH, 800, 150, 35)
+        expBar.bounds = Rectangle(615 + HEALTH_WIDTH, 800, 150, 35)
         expBar.font = baseFont
         expBar.isStringPainted = true
         add(expBar)
@@ -430,16 +421,16 @@ class MainWindow : JFrame(), ActionListener {
                 // Set up the list of attacks
                 attackSelector.removeAllItems()
                 // Find all attacks
-                val attacks = mutableListOf<String>()
-                for (move in App.primaryWeapon.moves) {
-                    if (App.primaryWeapon.cooldown[move] != null) {
-                        attacks.add("${move.name} [Cooldown: ${App.primaryWeapon.cooldown[move]} turns]")
-                    } else {
-                        attacks.add(move.name)
+                val attacks = App.primaryWeapon.moves
+                    .sortedBy { it.damage } // sort by damage ascending
+                    .map { move ->
+                        val cooldown = App.primaryWeapon.cooldown[move]
+                        if (cooldown != null) {
+                            "${move.name} [Cooldown: $cooldown turns]"
+                        } else {
+                            move.name
+                        }
                     }
-                }
-
-                attacks.sort()
 
                 for (item in attacks) {
                     attackSelector.addItem(item)
@@ -448,12 +439,9 @@ class MainWindow : JFrame(), ActionListener {
                 // Set up the list of locations
                 placeSelector.removeAllItems()
                 // Find all connected locations
-                val places = mutableListOf<String>()
-                for (place in App.currentLocation.getAvailableDestinations()) {
-                    places.add(place.name)
-                }
-
-                places.sort()
+                val places = App.currentLocation.getAvailableDestinations()
+                    .sortedBy { it.name }
+                    .map { move -> move.name }
 
                 for (place in places) {
                     placeSelector.addItem(place)
@@ -461,6 +449,7 @@ class MainWindow : JFrame(), ActionListener {
             }
         }
 
+        // Update the progress bars
         healthBar.maximum = App.maxHealth.toInt()
         healthBar.value = App.health.toInt()
 
@@ -468,6 +457,7 @@ class MainWindow : JFrame(), ActionListener {
         expBar.maximum = App.neededExp.toInt()
         expBar.value = App.exp.toInt()
 
+        // Tell the user where they need to go next
         if (App.storyDestination != null) {
             destination.text = "Destination: ${App.storyDestination!!.name}"
         } else {
@@ -481,6 +471,7 @@ class MainWindow : JFrame(), ActionListener {
      */
     override fun actionPerformed(e: ActionEvent?) {
         when (e?.source) {
+            // Handle text input
             textInput -> {
                 if (App.expectingTextInput) {
                     val input = textInput.text.trim()
@@ -489,11 +480,13 @@ class MainWindow : JFrame(), ActionListener {
                 }
             }
 
+            // Toggle the current action menu
             action -> {
                 App.expectingAction = !App.expectingAction
                 updateView()
             }
 
+            // Check if the attack is valid
             attackSelector -> {
                 val selectedItem = attackSelector.selectedItem as? String
                 if (selectedItem != null) {
@@ -506,6 +499,7 @@ class MainWindow : JFrame(), ActionListener {
                 attack.isEnabled = false
             }
 
+            // Submit the current attack if valid
             attack -> {
                 if (App.expectingCombatInput) {
                     val move = attackSelector.selectedItem as? String
@@ -527,15 +521,7 @@ class MainWindow : JFrame(), ActionListener {
                 }
             }
 
-            placeSelector -> {
-                val selectedItem = placeSelector.selectedItem as? String
-                if (selectedItem != null) {
-                    move.isEnabled = true
-                    return
-                }
-                move.isEnabled = false
-            }
-
+            // Attempt to move to the selected location
             move -> {
                 if (App.expectingAction) {
                     val place = placeSelector.selectedItem as? String
