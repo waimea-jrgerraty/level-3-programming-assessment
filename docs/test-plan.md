@@ -10,6 +10,29 @@ Terminology:
 
 ---
 
+## Win / Loss state
+
+I need to ensure that the end of the game can be reached, and the failure condition (death) works.
+
+**VALID**
+
+- Defeating the drowned king in the finale chapter of the story will conclude the game and put you into freeroam
+- If your health drops to 0 during a combat sequence, you will die and the program will terminate
+
+### Test Data To Use
+
+- To test the failure condition, I will purposefully lose to Captain Rourke by only using Swing.
+- To test the victory condition, I will just play through the entire game from start to finish, and document if I can
+  reach the completion state. I would use the debug system to skip to the end, but I need to test whole story anyways.
+
+### Expected Test Result
+
+- The game should inform me I died, and close itself after a few seconds.
+- I should be able to reach the end of the game through normal gameplay, and from there be able to move around the map
+  without any more quests.
+
+---
+
 ## Direction pathfinding
 
 As part of the directions system where the NPCs direct you around the map, there need to be some guidelines for the
@@ -20,10 +43,20 @@ how to get from Northbury to Dunmarch (through Balmoral).
 
 - Any path returned by the algorithm should be the shortest possible path, not just a possible path
 
+**BOUNDARY**
+
+- Paths with a distance of 1 (current location, target location) should function correctly
+
+**INVALID**
+
+- A path that is not the shortest is Invalid
+- The program should not be returning empty paths
+
 ### Test Data To Use
 
 - I will complete the second chapter of the story (at Northbury) and look at the given path between Northbury and
   Dunmarch.
+- To test the boundary case, I will complete the Ironforge chapter, as Ironforge and Cinderholm are adjacent.
 
 ### Expected Test Result
 
@@ -31,6 +64,7 @@ how to get from Northbury to Dunmarch (through Balmoral).
     - Northbury to Balmoral
     - Balmoral to Dunmarch
   As this should be the shortest path between the two locations
+- I should be told to go from Ironforge to Cinderholm
 
 ---
 
@@ -100,32 +134,6 @@ to make combat more interesting.
 - Selecting the move with 1 turn of cooldown remaining should disable the Attack button
 - I should be able to attack twice in a row with the basic move
 - I should be able to use Tornado once, but it will not work on the next turn
-
----
-
-## Win / Loss state
-
-I need to ensure that the end of the game can be reached, and the failure condition (death) works.
-
-**VALID**
-
-- Defeating the drowned king in the finale chapter of the story will conclude the game and put you into freeroam
-- If your health drops to 0 during a combat sequence, you will die and the program will terminate
-
-### Test Data To Use
-
-- To test the failure condition, I will purposefully lose to the Barrow Wight in the first Dunmarch chapter, using the
-  debug system to give me the quest completion flags for the first two chapters. This will mean I keep the basic sword
-  for that fight, and should mean it is possible to lose by playing badly. In theory, the first two enemies should not
-  be possible to lose to, which is why I am testing this with the Barrow Wight.
-- To test the victory condition, I will just play through the entire game from start to finish, and document if I can
-  reach the completion state. I would use the debug system to skip to the end, but I need to test whole story anyways.
-
-### Expected Test Result
-
-- The game should inform me I died, and close itself after a few seconds.
-- I should be able to reach the end of the game through normal gameplay, and from there be able to move around the map
-  without any more quests.
 
 ---
 
